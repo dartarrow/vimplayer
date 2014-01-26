@@ -12,8 +12,8 @@ typedef struct Voice_Chunks
 
 typedef struct Subtitle
 {
-    int* sub_start_time;
-    char** subtitle;
+    int sub_start_time;
+    char* subtitle;
     int subtitle_count;
 
 } Subtitle;
@@ -51,17 +51,17 @@ void fit_subtitle(Subtitle* subtitle, VoiceDetectVector* vector)
 
     // Do the same thing to the subtitle
 
-    subt_list[0].start_time = subtitle->sub_start_time[0];
-    subt_list[0].end_time = subtitle->sub_start_time[0] + 1;
+    subt_list[0].start_time = subtitle[0].sub_start_time;
+    subt_list[0].end_time = subtitle[0].sub_start_time + 1;
 
     int subt_chunk_size = 1;
     for(int i = 1; i < subtitle->subtitle_count; i ++) {
-        if(subtitle->sub_start_time[i] - subtitle->sub_start_time[i - 1] <= 2) {
-            subt_list[subt_chunk_size - 1].end_time = subtitle->sub_start_time[i] + 1;
+        if(subtitle[i].sub_start_time - subtitle[i - 1].sub_start_time <= 2) {
+            subt_list[subt_chunk_size - 1].end_time = subtitle[i].sub_start_time + 1;
         } else {
-            subt_list[chunk_size].start_time = subtitle->sub_start_time[i];
-            subt_list[chunk_size].end_time = subtitle->sub_start_time[i] + 1;
-            chunk_size ++;
+            subt_list[subt_chunk_size].start_time = subtitle[i].sub_start_time;
+            subt_list[subt_chunk_size].end_time = subtitle[i].sub_start_time + 1;
+            subt_chunk_size ++;
         }
     }
 
@@ -79,7 +79,7 @@ void find_match(Voice_Chunks* subt, Voice_Chunks* voice, int sub_size, int voc_s
         for(int j = 0; j < voc_size; j ++) {
             double match = abs(voice[j].start_time - subt[i].start_time) * 
                 abs(voice[j].end_time - subt[i].end_time) *
-                abs(voice[j].end_time - voice[j].start_time - sub_chunk_size + 1);
+                abs(voice[j].end_time - voice[j].start_time - sub_chunk_size + 10);
             if(match < smallest) {
                 smallest = match;
                 best_match = j;
@@ -88,8 +88,10 @@ void find_match(Voice_Chunks* subt, Voice_Chunks* voice, int sub_size, int voc_s
         offset[i] = voice[best_match].start_time - subt[i].start_time;        
     } 
 
-    for(int i = 0; i < sub_size; i ++) 
+    for(int i = 0; i < sub_size; i ++) { 
         avg_offset += offset[i];
+        printf("off : %f \n", offset[i]);
+    }
     avg_offset /= sub_size;
 
     // Check the minimum nearby the solution
@@ -166,7 +168,21 @@ int main()
         printf("At %f : \n", vector->data[i].start_time);
     }
 
-    
+    char** subtitles;
+    int* start_times;
+    int total_subtitle = 0;
+    analyze("a.smi", &subtitles, &start_times, &total_subtitle);
+    printf("total sub : %d \n", total_subtitle);
+    Subtitle* subtitle_list = (Subtitle *)malloc(sizeof(Subtitle) * total_subtitle);
+    for(int i = 0; i < total_subtitle; i ++) {
+        subtitle_list[i].subtitle = subtitles[i];
+        subtitle_list[i].sub_start_time = start_times[i];
+        printf("start at : %d \n", start_times[i]);
+        subtitle_list[i].subtitle_count = total_subtitle; 
+    }
+
+    fit_subtitle(subtitle_list, vector);
+    free(subtitle_list);
     free_vector(vector);
 
     return 0;
