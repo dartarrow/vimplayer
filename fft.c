@@ -76,7 +76,6 @@ void run_fft(Handle* handle, VoiceDetectVector* vector) //, double * voice_start
         }
         fftw_execute(plan);
 
-        read_count += read_num;
 
         for(int i = 0; i < SAMPLE_SIZE / 2; i ++) {
             result[i] = sqrt(output[i] * output[i] + output[SAMPLE_SIZE - i - 1]*output[SAMPLE_SIZE - i - 1]); 
@@ -130,6 +129,8 @@ void run_fft(Handle* handle, VoiceDetectVector* vector) //, double * voice_start
                 add_VoiceDetect(vector, &v);
             }
         }
+
+        read_count += read_num;
     }
     fftw_destroy_plan(plan);
 }
@@ -137,7 +138,7 @@ int main()
 {
     struct Handle handle;
     VoiceDetectVector* vector = create_vector(); 
-    setup_audio_file(&handle, "/home/probablee/cpp/caption-sync/bbad.wav");
+    setup_audio_file(&handle, "/home/probablee/cpp/caption-sync/b.wav");
     run_fft(&handle, vector);
 
     for(int i = 0; i < vector->size; i ++) {
@@ -146,5 +147,5 @@ int main()
     free_vector(vector);
 
     return 0;
-    
+
 }
