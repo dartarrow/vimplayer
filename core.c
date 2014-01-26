@@ -2,6 +2,7 @@
 #include "voice_vector.h"
 #include "subtitle_analyze.h"
 #include "fft.h"
+#include "preprocess.h"
 
 #define INF 1000000000
 typedef struct Voice_Chunks
@@ -107,7 +108,8 @@ void find_match(Voice_Chunks* subt, Voice_Chunks* voice, int sub_size, int voc_s
         }
     }
 
-    printf("OFFSET : %f | EXTEND RATE : %f \n", best_i + avg_offset, 1 + 0.1 * best_j);
+    printf("OFFSET : f | EXTEND RATE : %f \n", best_i + avg_offset, 1 + 0.1 * best_j);
+    free(offset);
 }
 double changed_loc(double loc, double offset, double extend)
 {
@@ -157,11 +159,14 @@ double calculate_score(Voice_Chunks * subtitle, Voice_Chunks* chunks,
     return total_point;
 }
 
-int main()
+int main(int argc, char* argv[])
 {
     struct Handle handle;
     VoiceDetectVector* vector = create_vector(); 
-    setup_audio_file(&handle, "/home/probablee/cpp/caption-sync/b.wav");
+
+    if(process_user_input(argc, argv) == -1) return 0;
+
+    setup_audio_file(&handle, argv[1]);
     run_fft(&handle, vector);
 
     for(int i = 0; i < vector->size; i ++) {
@@ -171,7 +176,7 @@ int main()
     char** subtitles;
     int* start_times;
     int total_subtitle = 0;
-    analyze("a.smi", &subtitles, &start_times, &total_subtitle);
+    analyze(argv[2], &subtitles, &start_times, &total_subtitle);
     printf("total sub : %d \n", total_subtitle);
     Subtitle* subtitle_list = (Subtitle *)malloc(sizeof(Subtitle) * total_subtitle);
     for(int i = 0; i < total_subtitle; i ++) {
