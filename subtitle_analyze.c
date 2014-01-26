@@ -1,27 +1,3 @@
-Using username "hjkwon93".
-Using keyboard-interactive authentication.
-Password:
-corn07.stanford.edu - Ubuntu 13.04, amd64
-8-core Opteron 2384 (SB X6240, 0916FM400J); 31.42GB RAM, 10GB swap
-Puppet environment: rec_master; kernel 3.8.0-31-generic (x86_64)
- --*-*- Stanford University Research Computing -*-*--
-
-  _____                    ____  _
- |  ___|_ _ _ __ _ __ ___ / ___|| |__   __ _ _ __ ___
- | |_ / _` | '__| '_ ` _ \\___ \| '_ \ / _` | '__/ _ \
- |  _| (_| | |  | | | | | |___) | | | | (_| | | |  __/
- |_|  \__,_|_|  |_| |_| |_|____/|_| |_|\__,_|_|  \___|
-
-
-    http://farmshare.stanford.edu
-
-###
-##
-# new to Ubuntu 13.04 Farmshare?
-# follow this link to get started:
-# https://www.stanford.edu/group/farmshare/cgi-bin/wiki/index.php/Ubuntu13Transi                                                                                                                     tionGuide
-##
-###
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
