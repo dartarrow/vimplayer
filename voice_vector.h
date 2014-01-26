@@ -1,3 +1,5 @@
+#ifndef VOICE_VECTOR_H
+#define VOICE_VECTOR_H
 #include <stdlib.h>
 typedef struct VoiceDetect
 {
@@ -17,4 +19,4 @@ VoiceDetectVector* create_vector();
 void add_VoiceDetect(VoiceDetectVector* vector, VoiceDetect* v);
 void free_vector(VoiceDetectVector *vector);
 
-
+#endif

@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
+#include "subtitle_analyze.h"
 
 void read_smi(char** subtitles[], int* start_times[], int* num){
     char *filename = "subtitles.smi";

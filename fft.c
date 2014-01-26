@@ -1,19 +1,5 @@
-#include <stdio.h>
-#include <fftw3.h>
-#include <sndfile.h>
-#include <math.h>
-#include <complex.h>
-#include "voice_vector.h"
+#include "fft.h"
 
-#define SAMPLE_SIZE 24000
-#define DIVIDE 100
-
-typedef struct Handle
-{
-    SNDFILE *audio_file;
-    SF_INFO file_info;
-
-} Handle;
 double haan_window(int total, int i)
 {
     return 0.5 * (1 - cos(2 * 3.1415 * i / (total - 1)));
@@ -134,18 +120,4 @@ void run_fft(Handle* handle, VoiceDetectVector* vector) //, double * voice_start
     }
     fftw_destroy_plan(plan);
 }
-int main()
-{
-    struct Handle handle;
-    VoiceDetectVector* vector = create_vector(); 
-    setup_audio_file(&handle, "/home/probablee/cpp/caption-sync/b.wav");
-    run_fft(&handle, vector);
 
-    for(int i = 0; i < vector->size; i ++) {
-        printf("At %f : \n", vector->data[i].start_time);
-    }
-    free_vector(vector);
-
-    return 0;
-
-}
