@@ -3,18 +3,17 @@
 #include <sndfile.h>
 #include <math.h>
 #include <complex.h>
+#include "voice_vector.h"
+
 #define SAMPLE_SIZE 24000
 #define DIVIDE 100
+
 typedef struct Handle
 {
     SNDFILE *audio_file;
     SF_INFO file_info;
 
 } Handle;
-typedef struct VoiceDetect
-{
-    int start_frame;
-}VoiceDetect;
 double haan_window(int total, int i)
 {
     return 0.5 * (1 - cos(2 * 3.1415 * i / (total - 1)));
@@ -49,14 +48,13 @@ int find_biggest(double* arr, int size)
     }
     return big_num;
 }
-void run_fft(Handle* handle)
+void run_fft(Handle* handle, VoiceDetectVector* vector) //, double * voice_starting_points)
 {
     if(handle->audio_file == NULL) return ;
     double sample[SAMPLE_SIZE * handle->file_info.channels];
     double output[SAMPLE_SIZE];
 
     double result[SAMPLE_SIZE];
-    double result_comp[239]; 
 
     float buffer[SAMPLE_SIZE];
 
@@ -78,6 +76,8 @@ void run_fft(Handle* handle)
         }
         fftw_execute(plan);
 
+        read_count += read_num;
+
         for(int i = 0; i < SAMPLE_SIZE / 2; i ++) {
             result[i] = sqrt(output[i] * output[i] + output[SAMPLE_SIZE - i - 1]*output[SAMPLE_SIZE - i - 1]); 
         }
@@ -96,17 +96,17 @@ void run_fft(Handle* handle)
             for(int i = 0; i < 12; i ++) {
                 // frequency : 50 * i + 300
                 result_check[i] = square_sum(result, (50 * i + 300) / (48000 / SAMPLE_SIZE), (50 * i + 350) / (48000 / SAMPLE_SIZE));
-            //    fprintf(fp, "%d ~ %d Hz, %f \n", 50 * i + 300, 50 * i + 350, result_check[i]);
+                //    fprintf(fp, "%d ~ %d Hz, %f \n", 50 * i + 300, 50 * i + 350, result_check[i]);
             }
             // Find biggest
             int biggest = find_biggest(result_check, 12);
             result_check[biggest] = 0;
-            
+
             // Second biggest
             int second = find_biggest(result_check, 12);
             double second_big = result_check[second];
             result_check[second] = 0;
-            
+
             // thrid biggest
             int third = find_biggest(result_check, 12);
             double third_big = result_check[third];
@@ -123,19 +123,28 @@ void run_fft(Handle* handle)
             sum /= 9;
             fprintf(fp, "AVG : %f , TOP 2,3 AVG : %f \n", sum, (second_big + third_big) / 2 );
             if(sum > (second_big + third_big) / 4) {
-                fprintf(fp, ">>>>>>>>>>>>>>>>>>>>>>>>>>>>> NOT HUMAN VOICE <<<<<<<<<<<<<<<<<<<<\n");
+                fprintf(fp, ">>>>>>>>>>>>>>>>>>>> NOT HUMAN VOICE <<<<<<<<<<<<<<<<<<\n");
 
+            } else {
+                VoiceDetect v = {(double)read_count/48000, total_energy};
+                add_VoiceDetect(vector, &v);
             }
         }
-        read_count += read_num;
     }
     fftw_destroy_plan(plan);
 }
 int main()
 {
     struct Handle handle;
-    setup_audio_file(&handle, "bbad.wav");
-    run_fft(&handle);
+    VoiceDetectVector* vector = create_vector(); 
+    setup_audio_file(&handle, "/home/probablee/cpp/caption-sync/bbad.wav");
+    run_fft(&handle, vector);
+
+    for(int i = 0; i < vector->size; i ++) {
+        printf("At %f : \n", vector->data[i].start_time);
+    }
+    free_vector(vector);
 
     return 0;
+    
 }
