@@ -3,6 +3,7 @@
 #include "subtitle_analyze.h"
 #include "fft.h"
 #include "preprocess.h"
+#include "math.h"
 
 #define INF 1000000000
 typedef struct Voice_Chunks
@@ -78,9 +79,9 @@ void find_match(Voice_Chunks* subt, Voice_Chunks* voice, int sub_size, int voc_s
         int best_match;
         double smallest = INF;
         for(int j = 0; j < voc_size; j ++) {
-            double match = abs(voice[j].start_time - subt[i].start_time) * 
-                abs(voice[j].end_time - subt[i].end_time) *
-                abs(voice[j].end_time - voice[j].start_time - sub_chunk_size + 10);
+            double match = (abs(voice[j].start_time - subt[i].start_time) + 3) * 
+                (abs(voice[j].end_time - subt[i].end_time) + 3) *
+                (abs(voice[j].end_time - voice[j].start_time - sub_chunk_size) + 10);
             if(match < smallest) {
                 smallest = match;
                 best_match = j;
@@ -89,11 +90,32 @@ void find_match(Voice_Chunks* subt, Voice_Chunks* voice, int sub_size, int voc_s
         offset[i] = voice[best_match].start_time - subt[i].start_time;        
     } 
 
+    // We need to remove abnormal cases
     for(int i = 0; i < sub_size; i ++) { 
         avg_offset += offset[i];
-        printf("off : %f \n", offset[i]);
     }
     avg_offset /= sub_size;
+
+    double stdev = 0;
+    for(int i = 0; i < sub_size; i ++) {
+        stdev += (avg_offset - offset[i]) * (avg_offset - offset[i]);
+    }
+
+    stdev = sqrt(stdev / sub_size);
+    printf("STDEV : %f \n", stdev);
+
+    double corrected_avg = 0;
+    int count = 0;
+    for(int i = 0; i < sub_size; i ++) {
+        if(abs(avg_offset - offset[i]) < 3 * stdev) {
+            corrected_avg += offset[i];
+            printf("off : %f \n", offset[i]);
+            count ++;
+        }
+    }
+
+    corrected_avg /= count; 
+    avg_offset = corrected_avg;
 
     // Check the minimum nearby the solution
     double min = INF;
@@ -108,7 +130,7 @@ void find_match(Voice_Chunks* subt, Voice_Chunks* voice, int sub_size, int voc_s
         }
     }
 
-    printf("OFFSET : f | EXTEND RATE : %f \n", best_i + avg_offset, 1 + 0.1 * best_j);
+    printf("OFFSET : %f | EXTEND RATE : %f \n", best_i + avg_offset, 1 + 0.1 * best_j);
     free(offset);
 }
 double changed_loc(double loc, double offset, double extend)
@@ -166,7 +188,9 @@ int main(int argc, char* argv[])
 
     if(process_user_input(argc, argv) == -1) return 0;
 
-    setup_audio_file(&handle, argv[1]);
+    char buffer[1000];
+    sprintf(buffer, "%s.wav", argv[1]);
+    setup_audio_file(&handle, buffer);
     run_fft(&handle, vector);
 
     for(int i = 0; i < vector->size; i ++) {
@@ -180,7 +204,6 @@ int main(int argc, char* argv[])
     printf("total sub : %d \n", total_subtitle);
     Subtitle* subtitle_list = (Subtitle *)malloc(sizeof(Subtitle) * total_subtitle);
     for(int i = 0; i < total_subtitle; i ++) {
-        subtitle_list[i].subtitle = subtitles[i];
         subtitle_list[i].sub_start_time = start_times[i];
         printf("start at : %d \n", start_times[i]);
         subtitle_list[i].subtitle_count = total_subtitle; 

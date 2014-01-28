@@ -1,4 +1,5 @@
 #include "preprocess.h"
+#include <stdio.h>
 
 int process_user_input(int argc, char *argv[])
 {
@@ -6,10 +7,17 @@ int process_user_input(int argc, char *argv[])
         printf("INVALID COMMAND INPUT");
         return -1;
     }
-
+    
     char buffer[1000];
-    sprintf(buffer, "aconv %s i %s.wav", argv[1], argv[1]);
+    sprintf(buffer, "avconv -i %s", argv[1]);
 
+    char avconv_output[1000];
+    FILE* fp = popen(buffer, avconv_output);
+
+    printf("%s", avconv_output);
+
+    sprintf(buffer, "avconv -i %s %s.wav", argv[1], argv[1]);
+    
     // Convert any media file to .wav file format
     system(buffer);
 
